@@ -20,7 +20,8 @@ namespace WorldDomination.SimpleRavenDb.Tests
         {
             get
             {
-                var fakeUsers = Builder<FakeUser>.CreateListOfSize(20)
+                var fakeUsers = Builder<FakeUser>
+                    .CreateListOfSize(20)
                     .All()
                     .With(fakeUser => fakeUser.Id, null) // Let the DB autogenerate the Id.
                     .Build()
@@ -31,8 +32,8 @@ namespace WorldDomination.SimpleRavenDb.Tests
                     fakeUsers
                 };
 
-
-                var heapsAndHeapsOfUsers = Builder<FakeUser>.CreateListOfSize(5000)
+                var heapsAndHeapsOfUsers = Builder<FakeUser>
+                    .CreateListOfSize(5000)
                     .All()
                     .With(fakeUser => fakeUser.Id, null) // Let the DB autogenerate the Id.
                     .Build()
@@ -50,7 +51,7 @@ namespace WorldDomination.SimpleRavenDb.Tests
                     { fakeData, null }, // Some fake data to seed, no Indexes.
                     { null, typeof(FakeUsers_ByName) }, // No fake data but an Index.
                     { fakeData, typeof(FakeUsers_ByName) }, // Some fake data to seed & Indexes.
-                    { heapsAndHeapsOfFakeData, typeof(FakeUsers_ByName) } // Heaps of some fake data to seed & Indexes.
+                    { heapsAndHeapsOfFakeData, typeof(FakeUsers_ByName) } // Heaps and heaps of some fake data to seed & Indexes.
                 };
 
                 return data;
@@ -59,8 +60,7 @@ namespace WorldDomination.SimpleRavenDb.Tests
 
         [Theory]
         [MemberData(nameof(Data))]
-        public async Task GivenTheBareMinimum_SetupRaveDb_SetsUpADatabase(IEnumerable<IList> fakeData,
-                                                                          Type indexAssembly)
+        public async Task GivenTheBareMinimum_SetupRaveDb_SetsUpADatabase(IEnumerable<IList> fakeData, Type indexAssembly)
         {
             // Arrange.
             var logger = new Mock<ILogger>();

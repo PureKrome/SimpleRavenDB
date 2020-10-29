@@ -54,14 +54,18 @@ namespace WorldDomination.SimpleRavenDb
                 documentStore.Certificate = new X509Certificate2(Convert.FromBase64String(options.X509CertificateBase64));
             }
 
-
             documentStore.Initialize();
 
             services.AddSingleton<IDocumentStore>(documentStore);
-            services.AddSingleton(setupOptions ?? new RavenDbSetupOptions()); // We need this for our custom Hosted service.
 
-            // We always want to setup RavenDB before the web hosting app.
-            services.AddHostedService<RavenDbSetupHostedService>();
+            // Do we wish to setup our DB? We should really do this BEFORE we accept web requests (if a web host)
+            // or before the main app (console app) starts.
+            if (setupOptions != null)
+            {
+                services.AddSingleton(setupOptions);
+
+                services.AddHostedService<RavenDbSetupHostedService>();
+            }
 
             return services;
         }

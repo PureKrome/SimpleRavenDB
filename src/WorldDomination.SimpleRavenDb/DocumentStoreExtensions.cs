@@ -129,7 +129,6 @@ namespace WorldDomination.SimpleRavenDb
                         cancellationToken.ThrowIfCancellationRequested();
                     }
 
-
                     var documentCount = existingDatabaseStatistics?.CountOfDocuments ?? 0;
                     if (documentCount > 0)
                     {
