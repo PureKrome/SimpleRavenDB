@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -140,7 +141,6 @@ namespace WorldDomination.SimpleRavenDb
                             setupOptions?.DocumentCollections,
                             logger,
                             cancellationToken);
-
                     }
 
                     if (cancellationToken.IsCancellationRequested)
@@ -193,23 +193,24 @@ namespace WorldDomination.SimpleRavenDb
             ILogger logger,
             CancellationToken cancellationToken)
         {
-            if (documentStore == null)
+            if (documentStore is null)
             {
                 throw new ArgumentNullException(nameof(documentStore));
             }
 
-            if (logger == null)
+            if (logger is null)
             {
                 throw new ArgumentNullException(nameof(logger));
             }
 
-            if (documentCollections == null)
+            if (documentCollections is null ||
+                !documentCollections.Any())
             {
                 logger.LogDebug(" - Skipping seeding fake data because no fake data was provided.");
                 return;
             }
 
-            int documentCollectionCount = 0, documentsCount = 0;
+            int documentCollectionCount = 0;
             logger.LogDebug(" - Seeding fake data ....");
 
             using (var session = documentStore.OpenAsyncSession())
@@ -223,11 +224,11 @@ namespace WorldDomination.SimpleRavenDb
                     // what I personally would consider is "large".
                     if (documentCollection.Count > 1000)
                     {
-                        await SeedLargeDataSetAsync(documentCollection, documentsCount, documentStore);
+                        await SeedLargeDataSetAsync(documentCollection, documentStore);
                     }
                     else
                     {
-                        await SeedSmallDataSetAsync(documentCollection, documentsCount, session, cancellationToken);
+                        await SeedSmallDataSetAsync(documentCollection, session, cancellationToken);
                     }
                 }
 
@@ -235,7 +236,9 @@ namespace WorldDomination.SimpleRavenDb
                 await session.SaveChangesAsync(cancellationToken);
             }
 
-            logger.LogDebug(" - Finished. Found {documentCollectionCount} document collections and stored {documentsCount} documents.", documentCollectionCount, documentsCount);
+            logger.LogDebug(" - Finished. Found {documentCollectionCount} document collections and stored {documentsCount} documents.", 
+                documentCollectionCount,
+                documentCollections.Sum(documents => documents.Count));
         }
 
         private static async Task SetupDatabaseTenantAsync(IDocumentStore documentStore,
@@ -280,18 +283,12 @@ namespace WorldDomination.SimpleRavenDb
         }
 
         private static async Task SeedSmallDataSetAsync(IEnumerable documentCollection,
-            long documentsCount,
             IAsyncDocumentSession session,
             CancellationToken cancellationToken)
         {
             if (documentCollection is null)
             {
                 throw new ArgumentNullException(nameof(documentCollection));
-            }
-
-            if (documentsCount < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(documentsCount));
             }
 
             if (session is null)
@@ -301,23 +298,16 @@ namespace WorldDomination.SimpleRavenDb
 
             foreach (var document in documentCollection)
             {
-                documentsCount++;
                 await session.StoreAsync(document, cancellationToken);
             }
         }
 
         private static async Task SeedLargeDataSetAsync(IEnumerable documentCollection,
-            long documentsCount,
             IDocumentStore documentStore)
         {
             if (documentCollection is null)
             {
                 throw new ArgumentNullException(nameof(documentCollection));
-            }
-
-            if (documentsCount < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(documentsCount));
             }
 
             if (documentStore is null)
@@ -339,12 +329,12 @@ namespace WorldDomination.SimpleRavenDb
             ILogger logger,
             CancellationToken cancellationToken)
         {
-            if (documentStore == null)
+            if (documentStore is null)
             {
                 throw new ArgumentNullException(nameof(documentStore));
             }
 
-            if (logger == null)
+            if (logger is null)
             {
                 throw new ArgumentNullException(nameof(logger));
             }

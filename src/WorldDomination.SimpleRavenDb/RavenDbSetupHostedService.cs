@@ -8,6 +8,9 @@ using Raven.Client.Documents;
 
 namespace WorldDomination.SimpleRavenDb
 {
+    /*
+     * REFERENCE FOR HOSTED SERVICES: https://andrewlock.net/running-async-tasks-on-app-startup-in-asp-net-core-3/
+     */
     public class RavenDbSetupHostedService : IHostedService
     {
         private readonly RavenDbSetupOptions _setupOptions;
@@ -15,14 +18,15 @@ namespace WorldDomination.SimpleRavenDb
         private readonly ILogger<RavenDbSetupHostedService> _logger;
 
         public RavenDbSetupHostedService(RavenDbSetupOptions setupOptions,
-                                         IServiceProvider serviceProvider,
-                                         ILogger<RavenDbSetupHostedService> logger)
+            IServiceProvider serviceProvider,
+            ILogger<RavenDbSetupHostedService> logger)
         {
             _setupOptions = setupOptions ?? throw new ArgumentNullException(nameof(setupOptions));
             _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
+        /// <inheritdoc />
         public async Task StartAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Starting to setup RavenDb...");
@@ -39,6 +43,7 @@ namespace WorldDomination.SimpleRavenDb
             return;
         }
 
+        /// <inheritdoc />
         public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }
