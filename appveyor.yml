@@ -73,7 +73,7 @@ artifacts:
 deploy:
   - provider: NuGet
     api_key:
-      secure: vyup43MdVw0Av8HKZu6z/daFk03a8aT589utaNHFjCU5zDZzgAM6rkyt/6agZfEh
+      secure: 8EdmbIQFKJXCePp1LFPdA0QoocIaXmLeJeU3LNbvrQ5iROs9hBdKu+3n+94ndxj1
     on:
       branch: master
       APPVEYOR_REPO_TAG: true
