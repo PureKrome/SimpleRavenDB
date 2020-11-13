@@ -22,21 +22,20 @@ namespace WorldDomination.SimpleRavenDb
     public static class DocumentStoreExtensions
     {
         // NOTE: Ignore DatabaseDoesNotExistException or AuthorizationException exceptions.
-        private static Policy CheckRavenDbPolicy(ILogger logger)
+        private static AsyncPolicy CheckRavenDbPolicyAsync(ILogger logger)
         {
             return Policy
-                .Handle<Exception>(exception => !(exception is DatabaseDoesNotExistException) &&
-                                                !(exception is AuthorizationException))
-                .WaitAndRetry(15, _ => TimeSpan.FromSeconds(2), (exception, timeSpan, context) =>
+                .Handle<Exception>()
+                .WaitAndRetryAsync(15, _ => TimeSpan.FromSeconds(2), (exception, timeSpan, context) =>
                 {
                     logger.LogWarning($"Failed to connect to RavenDb. It may not be ready. Retrying ... time to wait: {timeSpan}. Exception: {exception.GetType()} {exception.Message.Substring(0, exception.Message.IndexOf('\n'))}");
                 });
         }
 
-        private static AsyncRetryPolicy SetupRavenDbPolicy(CancellationToken cancellationToken, ILogger logger)
+        private static AsyncPolicy SetupRavenDbPolicyAsync(CancellationToken cancellationToken, ILogger logger)
         {
             return Policy
-                .Handle<Exception>(exception => !(exception is ConcurrencyException)) // Race Condition: DB already exists.
+                .Handle<Exception>()
                 .WaitAndRetryAsync(15, _ => TimeSpan.FromSeconds(2), (exception, timeSpan, __) =>
                 {
                     var message = exception.Message.Contains("\n")
@@ -91,8 +90,8 @@ namespace WorldDomination.SimpleRavenDb
             DatabaseStatistics existingDatabaseStatistics = null;
             try
             {
-                var checkRavenDbPolicy = setupOptions?.Policy ?? CheckRavenDbPolicy(logger);
-                await checkRavenDbPolicy.Execute(async token =>
+                var checkRavenDbPolicy = setupOptions?.Policy ?? CheckRavenDbPolicyAsync(logger);
+                await checkRavenDbPolicy.ExecuteAsync(async cancellationToken =>
                 {
                     existingDatabaseStatistics = await documentStore.Maintenance.SendAsync(new GetStatisticsOperation(), cancellationToken);
                 }, cancellationToken);
@@ -118,7 +117,7 @@ namespace WorldDomination.SimpleRavenDb
 
             try
             {
-                await SetupRavenDbPolicy(cancellationToken, logger).ExecuteAsync(async token =>
+                await SetupRavenDbPolicyAsync(cancellationToken, logger).ExecuteAsync(async cancellationToken =>
                 {
                     await SetupDatabaseTenantAsync(documentStore,
                         existingDatabaseStatistics != null,

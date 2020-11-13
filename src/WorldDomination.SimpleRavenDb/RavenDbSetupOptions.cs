@@ -20,6 +20,6 @@ namespace WorldDomination.SimpleRavenDb
         /// <summary>
         /// Optional: Custom Polly policy to check if the Databsse is up and running. 
         /// </summary>
-        public Policy Policy { get; set; }
+        public AsyncPolicy Policy { get; set; }
 }
 }
