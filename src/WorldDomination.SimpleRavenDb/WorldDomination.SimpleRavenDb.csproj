@@ -15,6 +15,7 @@
     <RepositoryUrl>https://github.com/Homely/SimpleRavenDb</RepositoryUrl>
     <RepositoryType>.net c# .net-core</RepositoryType>
     <PackageTags>ravendb dotnet c# world-domination unicorn magicalunicorn magical-unicorn</PackageTags>
+    <PackageReleaseNotes>https://github.com/PureKrome/SimpleRavenDB/blob/master/CHANGELOG.md</PackageReleaseNotes>
 
     <IsPackable>true</IsPackable>
 
