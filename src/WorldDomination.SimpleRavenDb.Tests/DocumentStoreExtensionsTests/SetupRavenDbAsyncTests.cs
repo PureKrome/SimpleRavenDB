@@ -1,14 +1,14 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using FizzWare.NBuilder;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Raven.Client.Documents.Operations;
 using Raven.TestDriver;
 using Shouldly;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using WorldDomination.SimpleRavenDb.Tests.DocumentStoreExtensionsTests;
 using Xunit;
 
@@ -60,7 +60,7 @@ namespace WorldDomination.SimpleRavenDb.Tests
 
         [Theory]
         [MemberData(nameof(Data))]
-        public async Task GivenTheBareMinimum_SetupRaveDb_SetsUpADatabase(IEnumerable<IList> fakeData, Type indexAssembly)
+        public async Task GivenTheBareMinimum_SetupRavenDb_SetsUpADatabase(IEnumerable<IList> fakeData, Type indexAssembly)
         {
             // Arrange.
             var logger = new Mock<ILogger>();

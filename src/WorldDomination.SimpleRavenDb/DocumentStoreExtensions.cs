@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Polly;
+using Polly.Retry;
 using Raven.Client.Documents;
 using Raven.Client.Documents.Indexes;
 using Raven.Client.Documents.Operations;
@@ -32,11 +33,11 @@ namespace WorldDomination.SimpleRavenDb
                 });
         }
 
-        private static Policy SetupRavenDbPolicy(CancellationToken cancellationToken, ILogger logger)
+        private static AsyncRetryPolicy SetupRavenDbPolicy(CancellationToken cancellationToken, ILogger logger)
         {
             return Policy
                 .Handle<Exception>(exception => !(exception is ConcurrencyException)) // Race Condition: DB already exists.
-                .WaitAndRetry(15, _ => TimeSpan.FromSeconds(2), (exception, timeSpan, __) =>
+                .WaitAndRetryAsync(15, _ => TimeSpan.FromSeconds(2), (exception, timeSpan, __) =>
                 {
                     var message = exception.Message.Contains("\n")
 
@@ -117,7 +118,7 @@ namespace WorldDomination.SimpleRavenDb
 
             try
             {
-                await SetupRavenDbPolicy(cancellationToken, logger).Execute(async token =>
+                await SetupRavenDbPolicy(cancellationToken, logger).ExecuteAsync(async token =>
                 {
                     await SetupDatabaseTenantAsync(documentStore,
                         existingDatabaseStatistics != null,
