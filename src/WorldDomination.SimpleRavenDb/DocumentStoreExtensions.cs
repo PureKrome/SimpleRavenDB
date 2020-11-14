@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Polly;
-using Polly.Retry;
 using Raven.Client.Documents;
 using Raven.Client.Documents.Indexes;
 using Raven.Client.Documents.Operations;
@@ -22,27 +21,40 @@ namespace WorldDomination.SimpleRavenDb
     public static class DocumentStoreExtensions
     {
         // NOTE: Ignore DatabaseDoesNotExistException or AuthorizationException exceptions.
-        private static AsyncPolicy CheckRavenDbPolicyAsync(ILogger logger)
+        private static AsyncPolicy CheckRavenDbPolicyAsync(ILogger logger, CancellationToken cancellationToken)
         {
+            // NOTE: we ignore:
+            //         - if the database doesn't exist 
+            //         - if we cannot authorize against the db
+            //       because we manually handle this outside of the retry. i.e. we don't need to retry, at all.
             return Policy
-                .Handle<Exception>()
+                .Handle<Exception>(exception => !(exception is DatabaseDoesNotExistException) &&
+                                                !(exception is AuthorizationException))
                 .WaitAndRetryAsync(15, _ => TimeSpan.FromSeconds(2), (exception, timeSpan, context) =>
                 {
-                    logger.LogWarning($"Failed to connect to RavenDb. It may not be ready. Retrying ... time to wait: {timeSpan}. Exception: {exception.GetType()} {exception.Message.Substring(0, exception.Message.IndexOf('\n'))}");
+                    var message = exception.Message.ToFirstNewLineOrDefault();
+                    logger.LogWarning("Failed to connect to RavenDb. It may not be ready. Retrying ... time to wait: {timeSpan}. Exception: {exceptionMessage}",
+                        timeSpan,
+                        $"{exception.GetType()} {message}");
+
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        logger.LogWarning("  !!! Request for graceful shutdown - so we're going to stop trying ....");
+                        throw new OperationCanceledException();
+                    }
                 });
         }
 
-        private static AsyncPolicy SetupRavenDbPolicyAsync(CancellationToken cancellationToken, ILogger logger)
+        private static AsyncPolicy SetupRavenDbPolicyAsync(ILogger logger, CancellationToken cancellationToken)
         {
             return Policy
                 .Handle<Exception>()
                 .WaitAndRetryAsync(15, _ => TimeSpan.FromSeconds(2), (exception, timeSpan, __) =>
                 {
-                    var message = exception.Message.Contains("\n")
-
-                        ? exception.Message.Substring(0, exception.Message.IndexOf('\n'))
-                        : exception.Message;
-                    logger.LogWarning($"Failed to setup RavenDb. Retrying ... time to wait: {timeSpan}. Exception: {exception.GetType()} {message}");
+                    var message = exception.Message.ToFirstNewLineOrDefault();
+                    logger.LogWarning("Failed to setup RavenDb. Retrying ... time to wait: {timeSpan}. Exception: {exceptionMessage}", 
+                        timeSpan, 
+                        $"{exception.GetType()} {message}");
 
                     if (cancellationToken.IsCancellationRequested)
                     {
@@ -90,7 +102,7 @@ namespace WorldDomination.SimpleRavenDb
             DatabaseStatistics existingDatabaseStatistics = null;
             try
             {
-                var checkRavenDbPolicy = setupOptions?.Policy ?? CheckRavenDbPolicyAsync(logger);
+                var checkRavenDbPolicy = setupOptions?.Policy ?? CheckRavenDbPolicyAsync(logger, cancellationToken);
                 await checkRavenDbPolicy.ExecuteAsync(async cancellationToken =>
                 {
                     existingDatabaseStatistics = await documentStore.Maintenance.SendAsync(new GetStatisticsOperation(), cancellationToken);
@@ -117,7 +129,7 @@ namespace WorldDomination.SimpleRavenDb
 
             try
             {
-                await SetupRavenDbPolicyAsync(cancellationToken, logger).ExecuteAsync(async cancellationToken =>
+                await SetupRavenDbPolicyAsync(logger, cancellationToken).ExecuteAsync(async cancellationToken =>
                 {
                     await SetupDatabaseTenantAsync(documentStore,
                         existingDatabaseStatistics != null,
@@ -278,7 +290,7 @@ namespace WorldDomination.SimpleRavenDb
             }
             catch (ConcurrencyException)
             {
-                logger.LogWarning($" - !!! Race-condition captured :: tried to create a database tenant '{documentStore.Database}' but another service already created it.");
+                logger.LogInformation($" - !!! Race-condition captured :: tried to create a database tenant '{documentStore.Database}' but another service already created it.");
             }
         }
 
