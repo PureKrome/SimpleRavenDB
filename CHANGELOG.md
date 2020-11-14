@@ -8,7 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
-## [2.0.0-RC.1] - 2020-11-14
+## [2.0.0-rc.2] - 2020-11-14
+
+### Fixed
+
+- Exceptions getting thrown in the Exception retry's.
+
+
+## [2.0.0-rc.1] - 2020-11-14
 
 ### Fixed 
 
@@ -19,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added Changelog.
 - Multi-Targetting NETStandard 2.0 and NET5.0
+
 
 ## [1.0.0] - 2020-11-03
 
