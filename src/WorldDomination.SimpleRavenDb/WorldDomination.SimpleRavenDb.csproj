@@ -10,9 +10,9 @@
     <Description>Making it simple to customize Hosting for your .NET Core 3.x+ application</Description>
     <Copyright>2020</Copyright>
     <OutputType>Library</OutputType>
-    <PackageProjectUrl>https://github.com/Homely/SimpleRavenDb</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/PureKrome/SimpleRavenDb</PackageProjectUrl>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
-    <RepositoryUrl>https://github.com/Homely/SimpleRavenDb</RepositoryUrl>
+    <RepositoryUrl>https://github.com/PureKrome/SimpleRavenDb</RepositoryUrl>
     <RepositoryType>.net c# .net-core</RepositoryType>
     <PackageTags>ravendb dotnet c# world-domination unicorn magicalunicorn magical-unicorn</PackageTags>
     <PackageReleaseNotes>https://github.com/PureKrome/SimpleRavenDB/blob/master/CHANGELOG.md</PackageReleaseNotes>
