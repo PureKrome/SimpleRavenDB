@@ -1,21 +1,3 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using Polly;
-using Raven.Client.Documents;
-using Raven.Client.Documents.Indexes;
-using Raven.Client.Documents.Operations;
-using Raven.Client.Documents.Session;
-using Raven.Client.Exceptions;
-using Raven.Client.Exceptions.Database;
-using Raven.Client.Exceptions.Security;
-using Raven.Client.ServerWide;
-using Raven.Client.ServerWide.Operations;
-
 namespace WorldDomination.SimpleRavenDb
 {
     public static class DocumentStoreExtensions
@@ -28,8 +10,8 @@ namespace WorldDomination.SimpleRavenDb
             //         - if we cannot authorize against the db
             //       because we manually handle this outside of the retry. i.e. we don't need to retry, at all.
             return Policy
-                .Handle<Exception>(exception => !(exception is DatabaseDoesNotExistException) &&
-                                                !(exception is AuthorizationException))
+                .Handle<Exception>(exception => exception is not DatabaseDoesNotExistException &&
+                                                exception is not AuthorizationException)
                 .WaitAndRetryAsync(15, _ => TimeSpan.FromSeconds(2), (exception, timeSpan, context) =>
                 {
                     var message = exception.Message.ToFirstNewLineOrDefault();
@@ -44,7 +26,6 @@ namespace WorldDomination.SimpleRavenDb
                     }
                 });
         }
-
         private static AsyncPolicy SetupRavenDbPolicyAsync(ILogger logger, CancellationToken cancellationToken)
         {
             return Policy
@@ -70,10 +51,11 @@ namespace WorldDomination.SimpleRavenDb
         /// <param name="documentStore">DocumentStore to check.</param>
         /// <param name="logger">Logger.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
-        public static Task SetupRavenDbAsync(this IDocumentStore documentStore,
+        public static Task SetupRavenDbAsync(
+            this IDocumentStore documentStore,
             ILogger logger,
             CancellationToken cancellationToken) => documentStore.SetupRavenDbAsync(null, logger, cancellationToken);
-        
+
         /// <summary>
         /// Setup a RavenDb database, ready to be used with some seeded, fake data (if provided) and any indexes (if provided).
         /// </summary>
@@ -82,31 +64,33 @@ namespace WorldDomination.SimpleRavenDb
         /// <param name="logger">Logger.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <remarks>Default Polly policy is 15 checks, every 2 seconds (if none was provided).</remarks>
-        public static async Task SetupRavenDbAsync(this IDocumentStore documentStore,
-            RavenDbSetupOptions setupOptions,
+        public static async Task SetupRavenDbAsync(
+            this IDocumentStore documentStore,
+            RavenDbSetupOptions? setupOptions,
             ILogger logger, 
             CancellationToken cancellationToken)
         {
-            if (documentStore == null)
-            {
-                throw new ArgumentNullException(nameof(documentStore));
-            }
+            logger.LogDebug(" - Checking if the database '{setupDatabaseName}' exists and if any data exists...", documentStore.Database);
 
-            if (logger == null)
-            {
-                throw new ArgumentNullException(nameof(logger));
-            }
-
-            logger.LogDebug($" - Checking if the database '{documentStore.Database}' exists and if any data exists...");
-
-            DatabaseStatistics existingDatabaseStatistics = null;
+            // First, lets grab some common/standard DB statistics. This way, we can determine if there is a DB
+            // and if the DB has data, etc.
+            // Result:
+            //     - No Statistics == no DB and we'll need to create one.
+            //     - Statistics == check to see if there is any data.
+            //                     If we have some, nothing to do.
+            //                     Otherwise, add fake seed data.
+            DatabaseStatistics? existingDatabaseStatistics;
             try
             {
+                // If a custom policy is provided, use that. Otherwise, we default back to a default-policy.
                 var checkRavenDbPolicy = setupOptions?.Policy ?? CheckRavenDbPolicyAsync(logger, cancellationToken);
-                await checkRavenDbPolicy.ExecuteAsync(async cancellationToken =>
-                {
-                    existingDatabaseStatistics = await documentStore.Maintenance.SendAsync(new GetStatisticsOperation(), cancellationToken);
-                }, cancellationToken);
+
+                existingDatabaseStatistics = await checkRavenDbPolicy
+                    .ExecuteAsync(
+                        async actionCancellationToken => await documentStore.Maintenance.SendAsync(
+                            new GetStatisticsOperation(),
+                            actionCancellationToken),
+                        cancellationToken);
             }
             catch (DatabaseDoesNotExistException)
             {
@@ -127,52 +111,23 @@ namespace WorldDomination.SimpleRavenDb
                 cancellationToken.ThrowIfCancellationRequested();
             }
 
+            // Now that we've checked the Db, lets create a DB and/or seed data, based on the Statistics values.
             try
             {
-                await SetupRavenDbPolicyAsync(logger, cancellationToken).ExecuteAsync(async cancellationToken =>
-                {
-                    await SetupDatabaseTenantAsync(documentStore,
-                        existingDatabaseStatistics != null,
+                await SetupRavenDbPolicyAsync(logger, cancellationToken)
+                    .ExecuteAsync(async actionCancellationToken => await DoSetupRavenDbDelegateAsync(
+                        documentStore,
+                        setupOptions,
+                        existingDatabaseStatistics,
                         logger,
+                        actionCancellationToken),
                         cancellationToken);
-
-                    if (cancellationToken.IsCancellationRequested)
-                    {
-                        logger.LogInformation("Cancelling setting up RavenDb database ...");
-                        cancellationToken.ThrowIfCancellationRequested();
-                    }
-
-                    var documentCount = existingDatabaseStatistics?.CountOfDocuments ?? 0;
-                    if (documentCount > 0)
-                    {
-                        logger.LogDebug($" - Skipping seeding fake data because database has {documentCount:N0} documents already in it.");
-                    }
-                    else
-                    {
-                        await SeedCollectionsOfFakeDataAsync(documentStore,
-                            setupOptions?.DocumentCollections,
-                            logger,
-                            cancellationToken);
-                    }
-
-                    if (cancellationToken.IsCancellationRequested)
-                    {
-                        logger.LogInformation("Cancelling setting up RavenDb database ...");
-                        cancellationToken.ThrowIfCancellationRequested();
-                    }
-
-                    await SetupIndexesAsync(documentStore,
-                        setupOptions?.IndexAssembly,
-                        logger,
-                        cancellationToken);
-                }, cancellationToken);
             }
             catch (Exception exception)
             {
                 logger.LogError("Failed to setup RavenDb and all retries failed. Unable to continue. Application is now terminating. Error: {exception}", exception);
                 throw;
             }
-
         }
 
         /// <summary>
@@ -193,6 +148,64 @@ namespace WorldDomination.SimpleRavenDb
                 cancellationToken);
         }
 
+        private static async Task DoSetupRavenDbDelegateAsync(
+            IDocumentStore documentStore,
+            RavenDbSetupOptions? setupOptions,
+            DatabaseStatistics? existingDatabaseStatistics,
+            ILogger logger,
+            CancellationToken actionCancellationToken)
+        {
+            // Create a new DB (which happens if we have no Statistics).
+            if (existingDatabaseStatistics != null)
+            {
+                logger.LogDebug(" - Database exists: no need to create one.");
+            }
+            else
+            {
+                await documentStore.SetupDatabaseTenantAsync(
+                    logger,
+                    actionCancellationToken);
+            }
+
+            if (actionCancellationToken.IsCancellationRequested)
+            {
+                logger.LogInformation("Cancelling setting up RavenDb database ...");
+                actionCancellationToken.ThrowIfCancellationRequested();
+            }
+
+            // Now add any seed data if we don't have any Documents.
+            var documentCount = existingDatabaseStatistics?.CountOfDocuments ?? 0;
+            if (documentCount > 0)
+            {
+                var count = $"{documentCount:N0}";
+                logger.LogDebug(" - Skipping seeding fake data because database has {setupDocumentCount} documents already in it.", count);
+            }
+            else
+            {
+                var seedDocuments = setupOptions?.DocumentCollections ?? Enumerable.Empty<IList>();
+
+                await documentStore.SeedCollectionsOfFakeDataAsync(
+                    seedDocuments,
+                    logger,
+                    actionCancellationToken);
+            }
+
+            if (actionCancellationToken.IsCancellationRequested)
+            {
+                logger.LogInformation("Cancelling setting up RavenDb database ...");
+                actionCancellationToken.ThrowIfCancellationRequested();
+            }
+
+            // Finally - any indexes we can pre-generate.
+            if (setupOptions?.IndexAssembly != null)
+            {
+                await documentStore.SetupIndexesAsync(
+                    setupOptions.IndexAssembly,
+                    logger,
+                    actionCancellationToken);
+            }
+        }
+
         /// <summary>
         /// Seeds some fake data into an existing database.
         /// </summary>
@@ -200,21 +213,12 @@ namespace WorldDomination.SimpleRavenDb
         /// <param name="documentCollections">Collection of document-collections.</param>
         /// <param name="logger">Logger.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
-        public static async Task SeedCollectionsOfFakeDataAsync(this IDocumentStore documentStore,
+        public static async Task SeedCollectionsOfFakeDataAsync(
+            this IDocumentStore documentStore,
             IEnumerable<IList> documentCollections,
             ILogger logger,
             CancellationToken cancellationToken)
         {
-            if (documentStore is null)
-            {
-                throw new ArgumentNullException(nameof(documentStore));
-            }
-
-            if (logger is null)
-            {
-                throw new ArgumentNullException(nameof(logger));
-            }
-
             if (documentCollections is null ||
                 !documentCollections.Any())
             {
@@ -222,58 +226,35 @@ namespace WorldDomination.SimpleRavenDb
                 return;
             }
 
-            int documentCollectionCount = 0;
+            var documentCollectionCount = 0;
             logger.LogDebug(" - Seeding fake data ....");
 
-            using (var session = documentStore.OpenAsyncSession())
+            foreach (var documentCollection in documentCollections)
             {
-                foreach (var documentCollection in documentCollections)
+                documentCollectionCount++;
+
+                // Determine if we should be bulk inserting. 
+                // We bulk insert if the number of documents _per collection_ are 
+                // what I personally would consider is "large".
+                if (documentCollection.Count > 1000)
                 {
-                    documentCollectionCount++;
-
-                    // Determine if we should be bulk inserting. 
-                    // We bulk insert if the number of documents _per collection_ are 
-                    // what I personally would consider is "large".
-                    if (documentCollection.Count > 1000)
-                    {
-                        await SeedLargeDataSetAsync(documentCollection, documentStore);
-                    }
-                    else
-                    {
-                        await SeedSmallDataSetAsync(documentCollection, session, cancellationToken);
-                    }
+                    await documentStore.SeedLargeDataSetAsync(documentCollection);
                 }
-
-                // This saves any changes saved for small document collections.
-                await session.SaveChangesAsync(cancellationToken);
+                else
+                {
+                    await documentStore.SeedSmallDataSetAsync(documentCollection, cancellationToken);
+                }
             }
 
             logger.LogDebug(" - Finished. Found {documentCollectionCount} document collections and stored {documentsCount} documents.", 
                 documentCollectionCount,
                 documentCollections.Sum(documents => documents.Count));
         }
-
-        private static async Task SetupDatabaseTenantAsync(IDocumentStore documentStore,
-            bool doesDatabaseExist,
+        private static async Task SetupDatabaseTenantAsync(
+            this IDocumentStore documentStore,
             ILogger logger,
             CancellationToken cancellationToken)
         {
-            if (documentStore == null)
-            {
-                throw new ArgumentNullException(nameof(documentStore));
-            }
-
-            if (logger == null)
-            {
-                throw new ArgumentNullException(nameof(logger));
-            }
-
-            if (doesDatabaseExist)
-            {
-                logger.LogDebug(" - Database exists: no need to create one.");
-                return;
-            }
-
             // Create the db if it doesn't exist.
             // This will mainly occur for in memory localhost development.
             logger.LogDebug(" - ** No database tenant found so creating a new database tenant ....");
@@ -290,43 +271,30 @@ namespace WorldDomination.SimpleRavenDb
             }
             catch (ConcurrencyException)
             {
-                logger.LogInformation($" - !!! Race-condition captured :: tried to create a database tenant '{documentStore.Database}' but another service already created it.");
+                logger.LogInformation(
+                    " - !!! Race-condition captured :: tried to create a database tenant '{setupDatabaseName}' but another service already created it.",
+                    documentStore.Database);
             }
         }
-
-        private static async Task SeedSmallDataSetAsync(IEnumerable documentCollection,
-            IAsyncDocumentSession session,
+        private static async Task SeedSmallDataSetAsync(
+            this IDocumentStore documentStore,
+            IEnumerable documentCollection,
             CancellationToken cancellationToken)
         {
-            if (documentCollection is null)
+            using (var session = documentStore.OpenAsyncSession())
             {
-                throw new ArgumentNullException(nameof(documentCollection));
-            }
+                foreach (var document in documentCollection)
+                {
+                    await session.StoreAsync(document, cancellationToken);
+                }
 
-            if (session is null)
-            {
-                throw new ArgumentNullException(nameof(session));
-            }
-
-            foreach (var document in documentCollection)
-            {
-                await session.StoreAsync(document, cancellationToken);
+                await session.SaveChangesAsync(cancellationToken);
             }
         }
-
-        private static async Task SeedLargeDataSetAsync(IEnumerable documentCollection,
-            IDocumentStore documentStore)
+        private static async Task SeedLargeDataSetAsync(
+            this IDocumentStore documentStore,
+            IEnumerable documentCollection)
         {
-            if (documentCollection is null)
-            {
-                throw new ArgumentNullException(nameof(documentCollection));
-            }
-
-            if (documentStore is null)
-            {
-                throw new ArgumentNullException(nameof(documentStore));
-            }
-
             using (var bulkInsert = documentStore.BulkInsert())
             {
                 foreach (var document in documentCollection)
@@ -335,29 +303,17 @@ namespace WorldDomination.SimpleRavenDb
                 }
             }
         }
-
-        private static async Task SetupIndexesAsync(IDocumentStore documentStore,
+        private static async Task SetupIndexesAsync(
+            this IDocumentStore documentStore,
             Type indexAssembly,
             ILogger logger,
             CancellationToken cancellationToken)
         {
-            if (documentStore is null)
-            {
-                throw new ArgumentNullException(nameof(documentStore));
-            }
-
-            if (logger is null)
-            {
-                throw new ArgumentNullException(nameof(logger));
-            }
-
-            if (indexAssembly != null)
-            {
-                logger.LogDebug(" - Creating/Updating indexes : will look for all indexes in the assembly '{indexAssembly}' ...", indexAssembly.FullName);
-                await IndexCreation.CreateIndexesAsync(indexAssembly.Assembly,
-                    documentStore,
-                    token: cancellationToken);
-            }
+            logger.LogDebug(" - Creating/Updating indexes : will look for all indexes in the assembly '{indexAssembly}' ...", indexAssembly.FullName);
+            await IndexCreation.CreateIndexesAsync(
+                indexAssembly.Assembly,
+                documentStore,
+                token: cancellationToken);
         }
     }
 }

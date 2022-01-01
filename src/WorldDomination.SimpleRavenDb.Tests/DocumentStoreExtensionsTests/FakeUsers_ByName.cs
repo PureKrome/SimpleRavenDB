@@ -1,6 +1,3 @@
-﻿using Raven.Client.Documents.Indexes;
-using System.Linq;
-
 namespace WorldDomination.SimpleRavenDb.Tests.DocumentStoreExtensionsTests
 {
     public class FakeUsers_ByName : AbstractIndexCreationTask<FakeUser>

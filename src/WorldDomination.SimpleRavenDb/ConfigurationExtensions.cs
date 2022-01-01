@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Configuration;
-
 namespace WorldDomination.SimpleRavenDb
 {
     public static class ConfigurationExtensions

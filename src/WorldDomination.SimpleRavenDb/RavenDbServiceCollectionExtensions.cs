@@ -1,9 +1,3 @@
-using System;
-using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using Microsoft.Extensions.DependencyInjection;
-using Raven.Client.Documents;
-
 namespace WorldDomination.SimpleRavenDb
 {
     public static class RavenDbServiceCollectionExtensions
@@ -16,23 +10,15 @@ namespace WorldDomination.SimpleRavenDb
         /// <param name="options">Options required to initialize the database.</param>
         /// <param name="setupOptions">Optional: RavenDb setup options, like seeding data.</param>
         /// <returns>The same collection of services.</returns>
-        public static IServiceCollection AddSimpleRavenDb(this IServiceCollection services,
-                                                          RavenDbOptions options,
-                                                          RavenDbSetupOptions setupOptions = null)
+        public static IServiceCollection AddSimpleRavenDb(
+            this IServiceCollection services,
+            RavenDbOptions options,
+            RavenDbSetupOptions? setupOptions = null)
         {
-            if (services is null)
-            {
-                throw new ArgumentNullException(nameof(services));
-            }
-
-            if (options is null)
-            {
-                throw new ArgumentNullException(nameof(options));
-            }
-
             const string missingRavenDbConfigurationText = "Missing RavenDb configuration setting: ";
 
-            if (options.ServerUrls?.Any() == false)
+            if (options.ServerUrls == null ||
+                options.ServerUrls.Any() == false)
             {
                 throw new Exception($"{missingRavenDbConfigurationText}{nameof(options.ServerUrls)}");
             }

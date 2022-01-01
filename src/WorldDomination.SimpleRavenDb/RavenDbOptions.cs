@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace WorldDomination.SimpleRavenDb
 {
     /// <summary>
@@ -22,12 +20,12 @@ namespace WorldDomination.SimpleRavenDb
         /// <summary>
         /// List of Url's to connect to the RavenDb server.
         /// </summary>
-        public IList<string> ServerUrls { get; set; }
+        public IList<string>? ServerUrls { get; set; }
 
         /// <summary>
         /// Database "Tenant" in the RavenDb server.
         /// </summary>
-        public string DatabaseName { get; set; }
+        public string? DatabaseName { get; set; }
 
         /// <summary>
         /// Base64 encoded representation of the X509 certificate.
@@ -35,6 +33,6 @@ namespace WorldDomination.SimpleRavenDb
         /// <remarks>
         /// How do I create one of these? Read this: https://ayende.com/blog/186881-A/x509-certificates-vs-api-keys-in-ravendb
         /// </remarks>
-        public string X509CertificateBase64 { get; set; }
+        public string? X509CertificateBase64 { get; set; }
     }
 }
