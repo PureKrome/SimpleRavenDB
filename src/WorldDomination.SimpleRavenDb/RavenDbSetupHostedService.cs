@@ -1,11 +1,3 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Raven.Client.Documents;
-
 namespace WorldDomination.SimpleRavenDb
 {
     /*
@@ -17,13 +9,14 @@ namespace WorldDomination.SimpleRavenDb
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<RavenDbSetupHostedService> _logger;
 
-        public RavenDbSetupHostedService(RavenDbSetupOptions setupOptions,
+        public RavenDbSetupHostedService(
+            RavenDbSetupOptions setupOptions,
             IServiceProvider serviceProvider,
             ILogger<RavenDbSetupHostedService> logger)
         {
-            _setupOptions = setupOptions ?? throw new ArgumentNullException(nameof(setupOptions));
-            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _setupOptions = setupOptions;
+            _serviceProvider = serviceProvider;
+            _logger = logger;
         }
 
         /// <inheritdoc />

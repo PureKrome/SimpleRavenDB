@@ -4,8 +4,8 @@ namespace WorldDomination.SimpleRavenDb
     {
         internal static string ToFirstNewLineOrDefault(this string value)
         {
-            return value.Contains("\n")
-                ? value.Substring(0, value.IndexOf('\n'))
+            return value.Contains('\n')
+                ? value[..value.IndexOf('\n')]
                 : value;
         }
     }

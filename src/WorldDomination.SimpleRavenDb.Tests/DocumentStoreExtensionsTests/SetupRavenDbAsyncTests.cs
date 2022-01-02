@@ -1,20 +1,6 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using FizzWare.NBuilder;
-using Microsoft.Extensions.Logging;
-using Moq;
-using Raven.Client.Documents.Operations;
-using Raven.TestDriver;
-using Shouldly;
-using WorldDomination.SimpleRavenDb.Tests.DocumentStoreExtensionsTests;
-using Xunit;
-
 namespace WorldDomination.SimpleRavenDb.Tests
 {
-    public class SetupRavenDbAsyncTests : RavenTestDriver
+    public class SetupRavenDbAsyncTests : RavenTestDriver, IClassFixture<RavenDbFixture>
     {
         public static TheoryData<IEnumerable<IList>, Type> Data
         {
@@ -73,7 +59,7 @@ namespace WorldDomination.SimpleRavenDb.Tests
                 DocumentCollections = fakeData,
                 IndexAssembly = indexAssembly
             };
-            await documentStore.SetupRavenDbAsync(setupOptions,logger.Object, default);
+            await documentStore.SetupRavenDbAsync(setupOptions, logger.Object, default);
 
             // Assert.
             WaitForIndexing(documentStore);

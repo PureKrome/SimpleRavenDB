@@ -1,6 +1,4 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -52,6 +50,7 @@ namespace WorldDomination.SimpleRavenDb.SampleApplication
                 var setupOptions = serviceProvider.GetService<RavenDbSetupOptions>();
 
                 // Now lets setup RavenDb!
+                // NOTE: no data is provided to be seeded.
                 await documentStore.SetupRavenDbAsync(setupOptions, logger, default);
             }
 

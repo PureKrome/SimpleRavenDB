@@ -1,0 +1,21 @@
+global using System;
+global using System.Collections;
+global using System.Collections.Generic;
+global using System.Linq;
+global using System.Security.Cryptography.X509Certificates;
+global using System.Threading;
+global using System.Threading.Tasks;
+global using Microsoft.Extensions.Configuration;
+global using Microsoft.Extensions.DependencyInjection;
+global using Microsoft.Extensions.Hosting;
+global using Microsoft.Extensions.Logging;
+global using Polly;
+global using Raven.Client.Documents;
+global using Raven.Client.Documents.Indexes;
+global using Raven.Client.Documents.Operations;
+global using Raven.Client.Exceptions;
+global using Raven.Client.Exceptions.Database;
+global using Raven.Client.Exceptions.Security;
+global using Raven.Client.ServerWide;
+global using Raven.Client.ServerWide.Operations;
+
