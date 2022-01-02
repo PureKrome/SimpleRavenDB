@@ -17,8 +17,6 @@
     <PackageTags>ravendb dotnet c# world-domination unicorn magicalunicorn magical-unicorn</PackageTags>
     <PackageReleaseNotes>https://github.com/PureKrome/SimpleRavenDB/blob/master/CHANGELOG.md</PackageReleaseNotes>
 
-    <IsPackable>true</IsPackable>
-
     <!-- Source Link. REF: https://github.com/dotnet/sourcelink -->
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
@@ -30,7 +28,10 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="6.0.0" />
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="RavenDB.Client" Version="5.3.1" />
     <PackageReference Include="Polly" Version="7.2.2" />
   </ItemGroup>

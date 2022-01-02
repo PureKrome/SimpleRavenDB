@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30204.135
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.32014.148
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WorldDomination.SimpleRavenDb.SampleWebApplication", "src\WorldDomination.SimpleRavenDb.SampleWebApplication\WorldDomination.SimpleRavenDb.SampleWebApplication.csproj", "{4D38BFAA-BA83-4DA7-A328-3C90CDB0ACAA}"
 EndProject
@@ -13,7 +13,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WorldDomination.SimpleRaven
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{F0307BEC-A3D6-4965-9F8E-7792F623D1D4}"
 	ProjectSection(SolutionItems) = preProject
-		appveyor.yml = appveyor.yml
 		CHANGELOG.md = CHANGELOG.md
 		docker-compose.localservices.yml = docker-compose.localservices.yml
 		global.json = global.json
