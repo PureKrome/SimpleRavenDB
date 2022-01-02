@@ -5,7 +5,7 @@ namespace WorldDomination.SimpleRavenDb
         /// <summary>
         /// Initializes a RavenDb database with some simple default settings.
         /// </summary>
-        /// <remarks>The RavenDb instance is also setup as a Singleton in the IoC framework.<br/><b> No data is setup here. Use the SetupRavenDb extension method on an IDocumentStore, to do that.</b></remarks>
+        /// <remarks>The RavenDb instance is also setup as a Singleton in the IoC framework -and- the hosted service is added.</remarks>
         /// <param name="services">Collection of services to setup.</param>
         /// <param name="options">Options required to initialize the database.</param>
         /// <param name="setupOptions">Optional: RavenDb setup options, like seeding data.</param>
@@ -46,6 +46,7 @@ namespace WorldDomination.SimpleRavenDb
 
             // Do we wish to setup our DB? We should really do this BEFORE we accept web requests (if a web host)
             // or before the main app (console app) starts.
+            // By adding in the HostedService, this will then auto start any Db migrations before the main 'host' starts.
             if (setupOptions != null)
             {
                 services.AddSingleton(setupOptions);

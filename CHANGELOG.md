@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0-rc.3] - 2022-01-02
+- 🚀 Upgraded to NET6.0
 
 ## [2.0.0-rc.2] - 2020-11-14
 
@@ -39,4 +41,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- :rocket: Initial release.
+- 🚀 Initial release.

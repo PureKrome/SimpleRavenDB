@@ -22,8 +22,6 @@
     <!-- Source Link. REF: https://github.com/dotnet/sourcelink -->
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <PackageIcon>icon.jpg</PackageIcon>
     <PackageIconUrl />
 
