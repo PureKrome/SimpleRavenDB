@@ -37,15 +37,8 @@ jobs:
       - name: Publish artifacts
         uses: actions/upload-artifact@v2
         with:
-          path: ./artifacts/*
-
-      - name: Upload release assets
-        uses: softprops/action-gh-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
           name: NuGetPackage.${{ env.RELEASE_VERSION }}.nupkg.zip
-          files: ./artifacts/*
+          path: ./artifacts/*
 
       - name: Publish to GPR
         run: |
