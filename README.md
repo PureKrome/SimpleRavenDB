@@ -16,8 +16,8 @@
     <img src="https://buildstats.info/nuget/WorldDomination.SimpleRavenDb" alt="NuGet" />
     </a>
     <!-- Github Actions -->
-    <a href="https://ci.appveyor.com/api/projects/status/simpleravendb/branch/master?svg=true">
-    <img src="https://ci.appveyor.com/api/projects/status/wao450s3jsu1d81s?svg=true" alt="AppVeyor-CI" />
+    <a href="https://github.com/PureKrome/SimpleRavenDB/actions/workflows/MergeToMain.yml">
+    <img src="https://github.com/PureKrome/SimpleRavenDB/actions/workflows/MergeToMain.yml/badge.svg" alt="Merge Pull Requests into 'main'" />
     </a>
 </div>
 
